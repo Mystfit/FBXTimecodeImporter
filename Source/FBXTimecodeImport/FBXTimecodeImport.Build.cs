@@ -45,7 +45,6 @@ public class FBXTimecodeImport : ModuleRules
 				"SlateCore",
 				"Sequencer",
 				"LevelSequence",
-				"LevelSequenceEditor",
 				"MovieScene"
 				// ... add private dependencies that you statically link with here ...	
 			}
@@ -61,7 +60,12 @@ public class FBXTimecodeImport : ModuleRules
 
 		if (Target.Type == TargetType.Editor)
 		{
-			DynamicallyLoadedModuleNames.AddRange(
+			PrivateDependencyModuleNames.AddRange(
+				new string[]{
+					//"LevelSequenceEditor"
+				});
+
+            DynamicallyLoadedModuleNames.AddRange(
 				new string[] {
 						"Settings",
 				});
@@ -69,7 +73,8 @@ public class FBXTimecodeImport : ModuleRules
 			PrivateIncludePathModuleNames.AddRange(
 				new string[] {
 						"Settings",
-				});
+                        "LevelSequenceEditor"
+                });
 		}
 
 		AddEngineThirdPartyPrivateStaticDependencies(Target, "FBX");
