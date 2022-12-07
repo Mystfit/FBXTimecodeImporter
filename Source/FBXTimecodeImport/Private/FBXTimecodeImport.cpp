@@ -178,7 +178,7 @@ void FFBXTimecodeImportModule::HandleAssetImport(UObject* InObject)
 		auto FBXEnd = FBXTimeSpan.GetStop();
 
 		// Save timecode as attributes in anim sequence
-		InjectTimecodeIntoSequence(ImportedSeq, FBXTimeToFTimecode(FBXStart), FFrameRate(ImportedSeq->ImportFileFramerate, 1));
+		InjectTimecodeIntoSequence(ImportedSeq, FBXTimeToFTimecode(FBXStart), FBXTimeToFTimecode(FBXEnd), FFrameRate(ImportedSeq->ImportFileFramerate, 1));
 		
 		// Cleanup
 		FbxImporter->ReleaseScene();
@@ -208,7 +208,7 @@ int32 FFBXTimecodeImportModule::GetTimecodeValueFromBoneAttrName(FName TCFieldNa
 	return 0;
 }
 
-void FFBXTimecodeImportModule::InjectTimecodeIntoSequence(UAnimSequence* Sequence, FTimecode Timecode, FFrameRate Framerate)
+void FFBXTimecodeImportModule::InjectTimecodeIntoSequence(UAnimSequence* Sequence, FTimecode StartTimecode, FTimecode EndTimecode, FFrameRate Framerate)
 {
 	auto& Controller = Sequence->GetController();
 	const int32 RootBoneTrackIndex = 0;
@@ -219,29 +219,53 @@ void FFBXTimecodeImportModule::InjectTimecodeIntoSequence(UAnimSequence* Sequenc
 	// We remove the rate attribute from the list since it will be manually added later as a float attribute instead of an integer
 	FName RateAttrName;
 	TimecodeBoneAttributeNames.RemoveAndCopyValue(FName(TEXT(TC_RATE_DEFAULT)), RateAttrName);
-	
+
+	TArray<float> TCKeyTimes;
+	TArray<FIntegerAnimationAttribute> TCFramerateKeyValues;
+	FTimecode CurrentTimecode;
+
 	// Only add valid bone attribute names
 	for (auto AttrName : TimecodeBoneAttributeNames) {
+		TArray<FIntegerAnimationAttribute> TCKeyValues;
+
 		// Create a new integer attribute identifier to hold our attribute ID and data
 		FAnimationAttributeIdentifier Identifier = UAnimationAttributeIdentifierExtensions::CreateAttributeIdentifier(Sequence, AttrName.Value, RootBoneName, FIntegerAnimationAttribute::StaticStruct());
 		Controller.AddAttribute(Identifier);
+
+		FFrameNumber Duration = EndTimecode.ToFrameNumber(Framerate) - StartTimecode.ToFrameNumber(Framerate);
 		
-		// Convert timecode to individual TC attribute values
-		FIntegerAnimationAttribute AttrVal;
-		AttrVal.Value = GetTimecodeValueFromBoneAttrName(AttrName.Value, Timecode);
+		for (int FrameNum = 0; FrameNum < Duration; ++FrameNum) {
+			// Calculate incremented timecode using the framerate from the timecode source
+			CurrentTimecode = FTimecode::FromFrameNumber(FrameNum, Framerate);
+			auto OffsetTimecode = FTimecode::FromFrameNumber(StartTimecode.ToFrameNumber(Framerate) + FrameNum, Framerate);
+			auto OffsetTimespan = CurrentTimecode.ToTimespan(Framerate);
+
+			// Only add frame timings during the first attribute pass
+			if (TCKeyTimes.Num() < Duration) {
+				TCKeyTimes.Add(OffsetTimespan.GetTotalMilliseconds() / 1000.0f);
+			}
+			
+			// Calculate frame-incremented timecode
+			FIntegerAnimationAttribute Attr;
+			FIntegerAnimationAttribute RateAttr;
+
+			Attr.Value = GetTimecodeValueFromBoneAttrName(AttrName.Value, OffsetTimecode);
+			RateAttr.Value = Framerate.AsDecimal();
+
+			TCKeyValues.Add(Attr);
+			TCFramerateKeyValues.Add(RateAttr);
+		}
 			
 		// Timecode values are saved in a single key at the start of the sequence
-		Controller.SetTypedAttributeKey<FIntegerAnimationAttribute>(Identifier, 0.0f, AttrVal);
-	}
+		Controller.SetTypedAttributeKeys<FIntegerAnimationAttribute>(Identifier, TCKeyTimes, TCKeyValues);
+	};
 
 	// Add float attributes seperately
 	FAnimationAttributeIdentifier Identifier = UAnimationAttributeIdentifierExtensions::CreateAttributeIdentifier(Sequence, RateAttrName, RootBoneName, FIntegerAnimationAttribute::StaticStruct());
 	Controller.AddAttribute(Identifier);
-	FIntegerAnimationAttribute AttrVal;
-	AttrVal.Value = Framerate.AsDecimal();
-	Controller.SetTypedAttributeKey<FIntegerAnimationAttribute>(Identifier, 0.0f, AttrVal);
+	Controller.SetTypedAttributeKeys<FIntegerAnimationAttribute>(Identifier, TCKeyTimes, TCFramerateKeyValues);
 
-	UE_LOG(LogFBXTimecodeImport, Log, TEXT("Injected timecode %s from imported FBX animation into %s"), *Timecode.ToString(), *Sequence->GetFullName());
+	UE_LOG(LogFBXTimecodeImport, Log, TEXT("Injected timecode keys starting from %s from imported FBX animation into %s"), *StartTimecode.ToString(), *Sequence->GetFullName());
 }
 
 const TMap<FName, FName> FFBXTimecodeImportModule::GetTimecodeBoneAttrNames()

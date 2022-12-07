@@ -41,7 +41,7 @@ public:
 	bool FBXTIMECODEIMPORT_API AnimSequenceContainsTimecodeAttrs(UAnimSequence* sequence);
 
 	// Inject timecode attributes into a sequence if they are missing
-	void FBXTIMECODEIMPORT_API InjectTimecodeIntoSequence(UAnimSequence* sequence, FTimecode timecode, FFrameRate framerate);
+	void FBXTIMECODEIMPORT_API InjectTimecodeIntoSequence(UAnimSequence* sequence, FTimecode StartTimecode, FTimecode EndTimecode, FFrameRate framerate);
 
 private:
 	FTimecode FBXTimeToFTimecode(const FbxTime& time, FbxTime::EMode mode = FbxTime::EMode::eDefaultMode);
