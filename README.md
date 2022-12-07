@@ -8,15 +8,25 @@ To install, create a folder named `FBXTimecodeImport` in either your engine plug
 
 ## Usage
 
-### Injecting timecode in animation sequences
-Import an FBX animation asset into UE as normal. The plugin automatically will inject the local timespan from the FBX file into the custom timecode bone attributes defined in the `Bone Timecode Custom Attribute Name Settings` array in your project settings. 
+### Setup
 
-The default attribute names are `TCHour`, `TCMinute`, `TCSecond`, `TCFrame`, `TCSubframe`, `TCRate`.
+![image](https://user-images.githubusercontent.com/795851/206091983-89c958e3-ff52-4ab3-834e-ff50971fe92d.png)
+
+Make sure that `Audo inject timecode into anim sequences` is checked in `Project Settings->FBX Timecode Importing`.
+
+### Injecting timecode in animation sequences
+Import an FBX animation asset into UE as normal. The plugin automatically will inject the local timespan from the FBX file into the custom timecode bone attributes defined in the `Bone Timecode Custom Attribute Name Settings` array in your project settings. The default attribute names are `TCHour`, `TCMinute`, `TCSecond`, `TCFrame`, `TCSubframe`, `TCRate`.
+
+When you add your animation sequence to a new level sequence, it will automatically populate the `Source Timecode` property accessible when you right+click the animation section and access the section properties.
+
+![image](https://user-images.githubusercontent.com/795851/206092634-af38b2fa-171a-47d6-b62c-d1b21ecf999b.png)
+
 
 ### Sequencer commands
-![Image showing the snap section to timecode command in the Unreal sequencer window](https://media.github.wgtn.ac.nz/user/54/files/7dc6adfb-2098-4f5a-8672-65256351998c)
 
-A new button will have been added to the toolbar of your sequencer containing timecode related commands. The command `Snap section to source timecode` will move a selected section in the sequencer to the timecode specified in its source timecode property.
+![image](https://user-images.githubusercontent.com/795851/206092328-ab04f82f-be50-4156-90ce-620a2ff75136.png)
+
+In the sequencer, you can snap your animation sequence to its source timecode property using the `Snap Sections to Timeline Using Source Timecode` command.
 
 ## Configuration
 
