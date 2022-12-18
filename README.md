@@ -4,7 +4,7 @@
 
 ## Installation
 
-To install, create a folder named `FBXTimecodeImport` in either your engine plugins directory or Unreal project plugins directory and copy the contents of this repository inside or download the latest zip from the [releases section](https://github.com/mystfit/FBXTimecodeImport/releases).
+To install, create a folder named `FBXTimecodeImport` in either your engine plugins directory or Unreal project plugins directory and copy the contents of this repository inside or download the latest zip from the [releases section](https://github.com/Mystfit/FBXTimecodeImporter/releases).
 
 ## Usage
 
